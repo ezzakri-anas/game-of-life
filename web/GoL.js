@@ -611,7 +611,7 @@ function get_nth_line(str, nth){
     while (n < nth + 1){
         if (str[i] == "\n"){
             n++;
-        }else if (n == nth){
+        } else if (n == nth){
             line += str[i];
         }
         i++;
@@ -686,41 +686,6 @@ function convert_RLE(data, size){
             }
         }
         i++;
-    }
-    return arr;
-}
-
-
-// ML
-async function LoadModel(){
-    var model = await tf.loadLayersModel("GoL_ML_tfjs/model.json");
-    return model;
-}
-
-var Model;
-LoadModel().then((response) => {Model = response;});
-
-
-document.getElementById('predict').addEventListener("click", (event) => {
-    event.preventDefault();
-    var brd, prediction;
-    brd = without_neigh(game.get_board());
-    try{
-        prediction = Model.predict(tf.tensor1d(brd).reshape([-1, 25, 25, 1])).dataSync();
-    } catch {
-        console.error("Cannot predict invalid pattern");
-        alert("Pattern cannot be predicted. Make sure to click on restart button after changing cell size parameter.")
-    }
-    
-    prediction = Array.from(prediction.map(x => +(x >= 0.5)));
-    game.new_board(prediction, false);
-})
-
-
-function without_neigh(lst){
-    let arr = Array.from(lst);
-    for(let n=0; n<arr.length; n++){
-        arr[n] = Math.floor(arr[n] / 10);
     }
     return arr;
 }
