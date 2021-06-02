@@ -232,14 +232,6 @@ function switch_mode(){
     DARK_BTN.className = DARKMODE ? "nav-link btn btn-secondary" : "nav-link btn btn-outline-secondary";
 }
 
-function printAsTable(board, dim=RESOLUTION) {
-    let t = [];
-    for (let i=0; i<dim[0]; i++) {
-        t[i] = board.slice(i * dim[1], dim[1] * (i + 1));
-    }
-    console.table(t);
-}
-
 function isNumeric(str){
     return !isNaN(parseFloat(str)) && isFinite(str);
 }
