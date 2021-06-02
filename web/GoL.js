@@ -33,6 +33,7 @@ var INIT_POS = [(c.height - GRID_SIZE[0]) / 2, (c.width - GRID_SIZE[1]) / 2];
 c.style.backgroundColor = DARKMODE ? "black" : "white";
 
 
+const MODEL_BOARD_SIZE = document.getElementById("25x25");
 const PLAY_BUTTON = document.getElementById("play");
 const RESTART_BUTTON = document.getElementById("restart");
 const DENSITY_DISP = document.getElementById("density");
@@ -75,7 +76,7 @@ c.addEventListener("mousemove", (e) => {
             prev_y = y;
         }
     }
-})
+});
 
 c.addEventListener("mousedown", (e) => {
     e.preventDefault();
@@ -109,6 +110,11 @@ CONTROLS.addEventListener("click", (event) =>{
     }
 });
 
+MODEL_BOARD_SIZE.addEventListener('click', (event) => {
+    event.preventDefault();
+    model_board_resolution();
+});
+
 [INCREASE_DEN_BTN, DECREASE_DEN_BTN,INCREASE_DEN_BY_10_BTN, DECREASE_DEN_BY_10_BTN,
     INCREASE_FPS_BTN, DECREASE_FPS_BTN, INCREASE_FPS_BY_10_BTN, DECREASE_FPS_BY_10_BTN,
     INCREASE_SIZE_BTN, DECREASE_SIZE_BTN, INCREASE_SIZE_BY_10_BTN, DECREASE_SIZE_BY_10_BTN].forEach(item => {
@@ -136,7 +142,7 @@ CONTROLS.addEventListener("click", (event) =>{
         }
         amount = controls[btn_id];
         change_parameter(controls[btn_id][0], controls[btn_id][1]);
-    })
+    });
 })
 
 function change_parameter(param, amount){
@@ -198,6 +204,22 @@ function change_cell_size(amount){
     INIT_POS = [(c.height - GRID_SIZE[0]) / 2, (c.width - GRID_SIZE[1]) / 2];
 }
 
+function model_board_resolution(){
+    clearGrid();
+
+    RESOLUTION = [25, 25];
+    CELL_SIZE = parseInt(c.height / 20);
+    CELL_SIZE_DISP.innerHTML = CELL_SIZE + " px²";
+    CELL_SIZE = parseFloat(CELL_SIZE);
+
+    rows = RESOLUTION[0];
+    cols = RESOLUTION[1];
+    SQR_SIZE = (Math.min((c.height) / rows, (c.width - c.offsetLeft) / cols)); //Math.floor()
+    GRID_SIZE = [SQR_SIZE * rows, SQR_SIZE * cols];
+    INIT_POS = [(c.height - GRID_SIZE[0]) / 2, (c.width - GRID_SIZE[1]) / 2];
+    PLAY_BUTTON.disabled = true;
+}
+
 function restart_game () {
     RESTART = true;
     RESTART_BUTTON.innerHTML = "Restart";
@@ -211,6 +233,8 @@ function switch_play_btn(state=false){
     document.getElementById("play").innerHTML = value;
 
     DARK_BTN.disabled = !PLAY;
+
+    MODEL_BOARD_SIZE.disabled = PLAY;
 
     DROP_DOWN_BTN.disabled = PLAY;
 
@@ -230,6 +254,14 @@ function switch_mode(){
     c.style.backgroundColor = DARKMODE ? "black" : "white";
     DARK_BTN.innerHTML = DARKMODE ? "Darkmode: ON" : "Darkmode: OFF";
     DARK_BTN.className = DARKMODE ? "nav-link btn btn-secondary" : "nav-link btn btn-outline-secondary";
+}
+
+function printAsTable(board, dim=RESOLUTION) {
+    let t = [];
+    for (let i=0; i<dim[0]; i++) {
+        t[i] = board.slice(i * dim[1], dim[1] * (i + 1));
+    }
+    console.table(t);
 }
 
 function isNumeric(str){
@@ -357,7 +389,7 @@ function GoL (board, resolution, formatted=false){
     this.init_board = function() {
         let brd = new Array(this.size);
         let r;
-        for (let i=0; i<sthis.ize; i++) {
+        for (let i=0; i<this.size; i++) {
             r = randomInt(0, 1);
             brd[i] = r * 10;
             neigh_indices.set(i, this.neighboursindices(i));
@@ -678,6 +710,44 @@ function convert_RLE(data, size){
             }
         }
         i++;
+    }
+    return arr;
+}
+
+
+// ML
+async function LoadModel(path){
+    var model = await tf.loadLayersModel(path);
+    return model;
+}
+
+var Models = {};
+
+LoadModel("GoL_forward_tfjs/model.json").then((response) => {Models["forward_step"] = response;});
+LoadModel("GoL_backward_tfjs/model.json").then((response) => {Models["backward_step"] = response;});
+
+
+[document.getElementById('forward_step'),
+document.getElementById('backward_step')].forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+        event.preventDefault();
+        var brd, prediction;
+        brd = without_neigh(game.get_board());
+        try{
+            prediction = Models[event.target.id].predict(tf.tensor1d(brd).reshape([-1, 25, 25, 1])).dataSync();
+            prediction = Array.from(prediction.map(x => +(x >= 0.5)));
+            game.new_board(prediction, false);
+        } catch {
+            console.error("Cannot predict invalid pattern");
+            alert("Pattern cannot be predicted. Make sure to select 25x25 board size, click on restart button then Pause.");
+        }
+    });
+})
+
+function without_neigh(lst){
+    let arr = Array.from(lst);
+    for(let n=0; n<arr.length; n++){
+        arr[n] = Math.floor(arr[n] / 10);
     }
     return arr;
 }
