@@ -6,3 +6,5 @@ To execute the browser version run 'index.html' file in 'web' folder.
 
 ### GUI version
 To execute the graphical user interface version run 'main.py' file.
+
+### You can read more about the forward and reverse GoL models in my dedicated repository: [OL-forward-and-reverse-models]([https://github.com/ezzakri-anas/game-of-life](https://github.com/ezzakri-anas/GOL-forward-and-reverse-models.git)https://github.com/ezzakri-anas/GOL-forward-and-reverse-models.git)
